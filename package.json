@@ -1,0 +1,19 @@
+{
+  "name": "qiita-kamo",
+  "version": "1.0.0",
+  "description": "Qiita / Qiita Team をターミナルから読み書きする依存ゼロの小さな CLI",
+  "type": "module",
+  "bin": {
+    "qiita-kamo": "./qiita-kamo.mjs"
+  },
+  "main": "qiita-kamo.mjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "qiita",
+    "qiita-team",
+    "cli"
+  ],
+  "license": "MIT"
+}
