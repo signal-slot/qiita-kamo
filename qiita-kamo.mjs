@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Qiita Team の記事を「ダウンロードせず」API から直接ターミナルに読むための CLI。
-//   node qiita-kamo.mjs list [--page N] [--per N]   記事一覧（番号・タイトル・ID・更新日）
-//   node qiita-kamo.mjs read <ID|番号>              記事1件を本文ごと表示
-//   node qiita-kamo.mjs search <キーワード>          タイトル部分一致で検索
+//   qiita-kamo list [--page N] [--per N]   記事一覧（番号・タイトル・ID・更新日）
+//   qiita-kamo read <ID|番号>              記事1件を本文ごと表示
+//   qiita-kamo search <キーワード>          タイトル部分一致で検索
 //
 // 認証: ~/.config/qiita-cli/credentials.json（qiita login が生成）か 環境変数 QIITA_TOKEN。
 // 接続先: .env の QIITA_DOMAIN（既定 qiita.com）。Qiita Team は <team>.qiita.com を指定。
@@ -90,7 +90,7 @@ const cmdList = async (domain, token, { page, per }) => {
     console.log(`${n}. ${it.title}`);
     console.log(`     id=${it.id}  更新=${fmtDate(it.updated_at)}  いいね=${it.likes_count ?? 0}`);
   });
-  console.log(`\n(page ${page}, ${items.length} 件表示。次ページ: node qiita-kamo.mjs list --page ${page + 1})`);
+  console.log(`\n(page ${page}, ${items.length} 件表示。次ページ: qiita-kamo list --page ${page + 1})`);
 };
 
 const cmdRead = async (domain, token, arg) => {
@@ -142,7 +142,7 @@ const cmdSearch = async (domain, token, keyword) => {
     if (items.length < per) break;
     page++;
   }
-  console.log(`\n${hit} 件ヒット。読むには: node qiita-kamo.mjs read <id>`);
+  console.log(`\n${hit} 件ヒット。読むには: qiita-kamo read <id>`);
 };
 
 // 全ページを走査して、述語 pred(item) が真の記事を列挙する共通処理。
@@ -168,7 +168,7 @@ const cmdFilter = async (domain, token, label, pred) => {
     if (items.length < per) break;
     page++;
   }
-  console.log(`\n${label}: ${hit} 件ヒット。読むには: node qiita-kamo.mjs read <id>`);
+  console.log(`\n${label}: ${hit} 件ヒット。読むには: qiita-kamo read <id>`);
 };
 
 const cmdTag = (domain, token, keyword) =>
@@ -210,7 +210,7 @@ const cmdGrep = async (domain, token, keyword) => {
     if (items.length < per) break;
     page++;
   }
-  console.log(`\n本文検索「${keyword}」: ${hit} 件ヒット。全文は: node qiita-kamo.mjs read <id>`);
+  console.log(`\n本文検索「${keyword}」: ${hit} 件ヒット。全文は: qiita-kamo read <id>`);
 };
 
 const cmdPost = async (domain, token, file) => {
@@ -250,37 +250,37 @@ const main = async () => {
     const per = Number(rest[rest.indexOf("--per") + 1]) || 100;
     await cmdList(domain, token, { page, per });
   } else if (cmd === "read") {
-    if (!rest[0]) throw new Error("使い方: node qiita-kamo.mjs read <ID|番号>");
+    if (!rest[0]) throw new Error("使い方: qiita-kamo read <ID|番号>");
     await cmdRead(domain, token, rest[0]);
   } else if (cmd === "search") {
-    if (!rest[0]) throw new Error("使い方: node qiita-kamo.mjs search <キーワード>");
+    if (!rest[0]) throw new Error("使い方: qiita-kamo search <キーワード>");
     await cmdSearch(domain, token, rest.join(" "));
   } else if (cmd === "tag") {
-    if (!rest[0]) throw new Error("使い方: node qiita-kamo.mjs tag <タグ名>");
+    if (!rest[0]) throw new Error("使い方: qiita-kamo tag <タグ名>");
     await cmdTag(domain, token, rest.join(" "));
   } else if (cmd === "group") {
-    if (!rest[0]) throw new Error("使い方: node qiita-kamo.mjs group <グループ名>");
+    if (!rest[0]) throw new Error("使い方: qiita-kamo group <グループ名>");
     await cmdGroup(domain, token, rest.join(" "));
   } else if (cmd === "grep") {
-    if (!rest[0]) throw new Error("使い方: node qiita-kamo.mjs grep <キーワード>");
+    if (!rest[0]) throw new Error("使い方: qiita-kamo grep <キーワード>");
     await cmdGrep(domain, token, rest.join(" "));
   } else if (cmd === "post") {
-    if (!rest[0]) throw new Error("使い方: node qiita-kamo.mjs post <file.md>");
+    if (!rest[0]) throw new Error("使い方: qiita-kamo post <file.md>");
     await cmdPost(domain, token, rest[0]);
   } else if (cmd === "update") {
-    if (!rest[0] || !rest[1]) throw new Error("使い方: node qiita-kamo.mjs update <ID> <file.md>");
+    if (!rest[0] || !rest[1]) throw new Error("使い方: qiita-kamo update <ID> <file.md>");
     await cmdUpdate(domain, token, rest[0], rest[1]);
   } else {
     console.log(`Qiita Team 記事 読み書き CLI (接続先: ${domain})
 
 読む:
-  node qiita-kamo.mjs list [--page N] [--per N]   記事一覧
-  node qiita-kamo.mjs read <ID|番号>              記事を表示（長い記事は | less 推奨）
-  node qiita-kamo.mjs search <キーワード>          タイトル検索
-  node qiita-kamo.mjs grep <キーワード>            本文を全文検索（抜粋表示）
+  qiita-kamo list [--page N] [--per N]   記事一覧
+  qiita-kamo read <ID|番号>              記事を表示（長い記事は | less 推奨）
+  qiita-kamo search <キーワード>          タイトル検索
+  qiita-kamo grep <キーワード>            本文を全文検索（抜粋表示）
 書く:
-  node qiita-kamo.mjs post <file.md>             新規投稿（frontmatter に title/tags/private）
-  node qiita-kamo.mjs update <ID> <file.md>      既存記事を更新
+  qiita-kamo post <file.md>             新規投稿（frontmatter に title/tags/private）
+  qiita-kamo update <ID> <file.md>      既存記事を更新
 `);
   }
 };
