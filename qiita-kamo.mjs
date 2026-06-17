@@ -76,7 +76,7 @@ const fmtDate = (s) => (s ? String(s).slice(0, 10) : "");
 
 const cmdList = async (domain, token, { page, per }) => {
   const items = await api(
-    `/api/v2/authenticated_user/items?page=${page}&per_page=${per}`,
+    `/api/v2/items?page=${page}&per_page=${per}`,
     domain,
     token,
   );
@@ -101,7 +101,7 @@ const cmdRead = async (domain, token, arg) => {
     const per = 100;
     const page = Math.floor((idx - 1) / per) + 1;
     const items = await api(
-      `/api/v2/authenticated_user/items?page=${page}&per_page=${per}`,
+      `/api/v2/items?page=${page}&per_page=${per}`,
       domain,
       token,
     );
@@ -128,7 +128,7 @@ const cmdSearch = async (domain, token, keyword) => {
   let hit = 0;
   while (true) {
     const items = await api(
-      `/api/v2/authenticated_user/items?page=${page}&per_page=${per}`,
+      `/api/v2/items?page=${page}&per_page=${per}`,
       domain,
       token,
     );
@@ -152,7 +152,7 @@ const cmdFilter = async (domain, token, label, pred) => {
   let hit = 0;
   while (true) {
     const items = await api(
-      `/api/v2/authenticated_user/items?page=${page}&per_page=${per}`,
+      `/api/v2/items?page=${page}&per_page=${per}`,
       domain,
       token,
     );
@@ -180,6 +180,38 @@ const cmdGroup = (domain, token, keyword) =>
   cmdFilter(domain, token, `グループ「${keyword}」`, (it) =>
     it.group && (it.group.name.includes(keyword) || it.group.url_name === keyword),
   );
+
+// 本文全文検索。一覧APIは各記事の body を含むので追加リクエストなしで横断検索できる。
+// AI が社内ナレッジを参照する用途を想定し、ヒット行の抜粋を出す（全文は read で取得）。
+const cmdGrep = async (domain, token, keyword) => {
+  const per = 100;
+  const kw = keyword.toLowerCase();
+  let page = 1;
+  let hit = 0;
+  while (true) {
+    const items = await api(
+      `/api/v2/items?page=${page}&per_page=${per}`,
+      domain,
+      token,
+    );
+    for (const it of items) {
+      const inTitle = it.title.toLowerCase().includes(kw);
+      const lines = (it.body || "").split("\n");
+      const matched = lines.filter((l) => l.toLowerCase().includes(kw));
+      if (!inTitle && matched.length === 0) continue;
+      hit++;
+      const grp = it.group ? `[${it.group.name}] ` : "";
+      console.log(`\n● ${grp}${it.title}`);
+      console.log(`  id=${it.id}  著者=@${it.user?.id ?? "?"}  更新=${fmtDate(it.updated_at)}  url=${it.url}`);
+      for (const l of matched.slice(0, 3)) {
+        console.log(`    | ${l.trim().slice(0, 120)}`);
+      }
+    }
+    if (items.length < per) break;
+    page++;
+  }
+  console.log(`\n本文検索「${keyword}」: ${hit} 件ヒット。全文は: node qiita-kamo.mjs read <id>`);
+};
 
 const cmdPost = async (domain, token, file) => {
   const text = await readFile(file, "utf8");
@@ -229,6 +261,9 @@ const main = async () => {
   } else if (cmd === "group") {
     if (!rest[0]) throw new Error("使い方: node qiita-kamo.mjs group <グループ名>");
     await cmdGroup(domain, token, rest.join(" "));
+  } else if (cmd === "grep") {
+    if (!rest[0]) throw new Error("使い方: node qiita-kamo.mjs grep <キーワード>");
+    await cmdGrep(domain, token, rest.join(" "));
   } else if (cmd === "post") {
     if (!rest[0]) throw new Error("使い方: node qiita-kamo.mjs post <file.md>");
     await cmdPost(domain, token, rest[0]);
@@ -242,6 +277,7 @@ const main = async () => {
   node qiita-kamo.mjs list [--page N] [--per N]   記事一覧
   node qiita-kamo.mjs read <ID|番号>              記事を表示（長い記事は | less 推奨）
   node qiita-kamo.mjs search <キーワード>          タイトル検索
+  node qiita-kamo.mjs grep <キーワード>            本文を全文検索（抜粋表示）
 書く:
   node qiita-kamo.mjs post <file.md>             新規投稿（frontmatter に title/tags/private）
   node qiita-kamo.mjs update <ID> <file.md>      既存記事を更新
