@@ -9,7 +9,7 @@ Qiita / Qiita Team の記事を**ターミナルから全文検索・読み書�
 
 ## セットアップ
 
-1. このリポジトリの `qiita-kamo.mjs` を任意の場所に置く。
+1. このリポジトリで `npm install -g .` を実行し、`qiita-kamo` コマンドを使えるようにする。
 2. 接続先を指定する（Qiita Team を使う場合）。カレントディレクトリの `.env` に書くか、環境変数で渡す。
 
    ```bash
@@ -27,16 +27,16 @@ Qiita / Qiita Team の記事を**ターミナルから全文検索・読み書�
 
 ```bash
 # 読む
-node qiita-kamo.mjs list [--page N] [--per N]   # 記事一覧（番号・タイトル・ID・更新日）
-node qiita-kamo.mjs read <ID|番号>              # 記事を表示（長い記事は | less 推奨）
-node qiita-kamo.mjs search <キーワード>          # タイトル検索
-node qiita-kamo.mjs grep <キーワード>            # 本文を全文検索（著者・抜粋付き）
-node qiita-kamo.mjs tag <タグ名>                 # タグで検索
-node qiita-kamo.mjs group <グループ名>           # グループ（Qiita Team のカテゴリ相当）で検索
+qiita-kamo list [--page N] [--per N]   # 記事一覧（番号・タイトル・ID・更新日）
+qiita-kamo read <ID|番号>              # 記事を表示（長い記事は | less 推奨）
+qiita-kamo search <キーワード>          # タイトル検索
+qiita-kamo grep <キーワード>            # 本文を全文検索（著者・抜粋付き）
+qiita-kamo tag <タグ名>                 # タグで検索
+qiita-kamo group <グループ名>           # グループ（Qiita Team のカテゴリ相当）で検索
 
 # 書く
-node qiita-kamo.mjs post <file.md>             # 新規投稿
-node qiita-kamo.mjs update <ID> <file.md>      # 既存記事を更新
+qiita-kamo post <file.md>             # 新規投稿
+qiita-kamo update <ID> <file.md>      # 既存記事を更新
 ```
 
 ### 投稿ファイルの形式
