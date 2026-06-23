@@ -26,6 +26,9 @@ Qiita / Qiita Team の記事を**ターミナルから全文検索・読み書�
 ## 使い方
 
 ```bash
+# ログイン（初回のみ）
+qiita-kamo login                       # アクセストークンを保存
+
 # 読む
 qiita-kamo list [--page N] [--per N]   # 記事一覧（番号・タイトル・ID・更新日）
 qiita-kamo read <ID|番号>              # 記事を表示（長い記事は | less 推奨）
