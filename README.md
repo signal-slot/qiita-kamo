@@ -20,8 +20,8 @@ Qiita / Qiita Team の記事を**ターミナルから全文検索・読み書�
    公開版 Qiita（qiita.com）の場合は `QIITA_DOMAIN` 未指定でOK。
 
 3. アクセストークンを用意する。次のいずれか。
-   - 環境変数 `QIITA_TOKEN=<token>`
-   - `~/.config/qiita-cli/credentials.json`（公式 `@qiita/qiita-cli` の `qiita login` が生成する形式）
+   - `qiita-kamo login` を実行し、対話入力で保存する（`~/.config/qiita-kamo/credentials.json`）
+   - 環境変数 `QIITA_TOKEN=<token>` を渡す
 
 ## 使い方
 

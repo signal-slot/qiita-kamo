@@ -4,9 +4,11 @@
 //   qiita-kamo read <ID|番号>              記事1件を本文ごと表示
 //   qiita-kamo search <キーワード>          タイトル部分一致で検索
 //
-// 認証: ~/.config/qiita-cli/credentials.json（qiita login が生成）か 環境変数 QIITA_TOKEN。
+// 認証: 環境変数 QIITA_TOKEN、または `qiita-kamo login` で保存したトークン
+//       （~/.config/qiita-kamo/credentials.json）。
 // 接続先: .env の QIITA_DOMAIN（既定 qiita.com）。Qiita Team は <team>.qiita.com を指定。
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { createInterface } from "node:readline/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -20,15 +22,20 @@ const readEnvDomain = async () => {
   return "qiita.com";
 };
 
+const credentialPath = () => {
+  const base = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
+  return path.join(base, "qiita-kamo", "credentials.json");
+};
+
 const readToken = async () => {
   if (process.env.QIITA_TOKEN) return process.env.QIITA_TOKEN;
-  const file = path.join(os.homedir(), ".config", "qiita-cli", "credentials.json");
-  const data = JSON.parse(await readFile(file, "utf8"));
-  const profile = data.default;
-  const cred =
-    data.credentials.find((c) => c.name === profile) ?? data.credentials[0];
-  if (!cred) throw new Error("credentials.json にトークンがありません。`npx qiita login` を実行してください。");
-  return cred.accessToken;
+  try {
+    const data = JSON.parse(await readFile(credentialPath(), "utf8"));
+    if (data.token) return data.token;
+  } catch {}
+  throw new Error(
+    "トークンがありません。`qiita-kamo login` でログインするか、環境変数 QIITA_TOKEN を設定してください。",
+  );
 };
 
 const api = async (apiPath, domain, token, { method = "GET", payload } = {}) => {
@@ -240,9 +247,50 @@ const cmdUpdate = async (domain, token, id, file) => {
   console.log(`  URL     : ${it.url}`);
 };
 
+// トークンを対話入力で受け取り、検証してから自前の保存先に書く。公式CLIには依存しない。
+const cmdLogin = async (domain) => {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const token = (await rl.question(`${domain} のアクセストークンを入力: `)).trim();
+  rl.close();
+  if (!token) throw new Error("トークンが空です。");
+  const user = await api(`/api/v2/authenticated_user`, domain, token);
+  const file = credentialPath();
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, JSON.stringify({ token }, null, 2) + "\n", { mode: 0o600 });
+  console.log(`ログインしました: @${user.id}`);
+  console.log(`保存先: ${file}`);
+};
+
+const printHelp = (domain) => {
+  console.log(`Qiita Team 記事 読み書き CLI (接続先: ${domain})
+
+ログイン:
+  qiita-kamo login                       アクセストークンを保存
+読む:
+  qiita-kamo list [--page N] [--per N]   記事一覧
+  qiita-kamo read <ID|番号>              記事を表示（長い記事は | less 推奨）
+  qiita-kamo search <キーワード>          タイトル検索
+  qiita-kamo grep <キーワード>            本文を全文検索（抜粋表示）
+書く:
+  qiita-kamo post <file.md>             新規投稿（frontmatter に title/tags/private）
+  qiita-kamo update <ID> <file.md>      既存記事を更新
+`);
+};
+
+const COMMANDS = ["list", "read", "search", "tag", "group", "grep", "post", "update"];
+
 const main = async () => {
   const [cmd, ...rest] = process.argv.slice(2);
   const domain = await readEnvDomain();
+
+  if (cmd === "login") {
+    await cmdLogin(domain);
+    return;
+  }
+  if (!COMMANDS.includes(cmd)) {
+    printHelp(domain);
+    return;
+  }
   const token = await readToken();
 
   if (cmd === "list") {
@@ -270,18 +318,6 @@ const main = async () => {
   } else if (cmd === "update") {
     if (!rest[0] || !rest[1]) throw new Error("使い方: qiita-kamo update <ID> <file.md>");
     await cmdUpdate(domain, token, rest[0], rest[1]);
-  } else {
-    console.log(`Qiita Team 記事 読み書き CLI (接続先: ${domain})
-
-読む:
-  qiita-kamo list [--page N] [--per N]   記事一覧
-  qiita-kamo read <ID|番号>              記事を表示（長い記事は | less 推奨）
-  qiita-kamo search <キーワード>          タイトル検索
-  qiita-kamo grep <キーワード>            本文を全文検索（抜粋表示）
-書く:
-  qiita-kamo post <file.md>             新規投稿（frontmatter に title/tags/private）
-  qiita-kamo update <ID> <file.md>      既存記事を更新
-`);
   }
 };
 
