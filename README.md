@@ -19,7 +19,11 @@ Qiita / Qiita Team の記事を**ターミナルから全文検索・読み書�
 
    公開版 Qiita（qiita.com）の場合は `QIITA_DOMAIN` 未指定でOK。
 
-3. アクセストークンを用意する。次のいずれか。
+3. アクセストークンを発行する。`read_qiita`（書き込みも使うなら `write_qiita` も）を付ける。
+   - 公開版 Qiita: <https://qiita.com/settings/tokens/new>
+   - Qiita Team: `https://<your-team>.qiita.com/settings/developer_settings`
+
+4. 発行したトークンを次のいずれかで渡す。
    - `qiita-kamo login` を実行し、対話入力で保存する（`~/.config/qiita-kamo/credentials.json`）
    - 環境変数 `QIITA_TOKEN=<token>` を渡す
 
