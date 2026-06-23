@@ -67,7 +67,8 @@ const parseArticle = (text) => {
     const kv = line.match(/^(\w+)\s*:\s*(.*)$/);
     if (kv) meta[kv[1]] = kv[2].trim();
   }
-  const tags = (meta.tags ? meta.tags.split(",") : [])
+  const rawTags = meta.tags || "";
+  const tags = (rawTags.includes(",") ? rawTags.split(",") : rawTags.split(/\s+/))
     .map((t) => t.trim())
     .filter(Boolean)
     .map((name) => ({ name, versions: [] }));
