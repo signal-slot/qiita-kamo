@@ -10,22 +10,14 @@ Qiita / Qiita Team の記事を**ターミナルから全文検索・読み書�
 ## セットアップ
 
 1. このリポジトリで `npm install -g .` を実行し、`qiita-kamo` コマンドを使えるようにする。
-2. 接続先を指定する（Qiita Team を使う場合）。カレントディレクトリの `.env` に書くか、環境変数で渡す。
 
-   ```bash
-   # .env
-   QIITA_DOMAIN=<your-team>.qiita.com
-   ```
-
-   公開版 Qiita（qiita.com）の場合は `QIITA_DOMAIN` 未指定でOK。
-
-3. アクセストークンを発行する。`read_qiita`（書き込みも使うなら `write_qiita` も）を付ける。
+2. アクセストークンを発行する。`read_qiita`（書き込みも使うなら `write_qiita` も。Qiita Team では `read_qiita_team` / `write_qiita_team`）を付ける。
    - 公開版 Qiita: <https://qiita.com/settings/tokens/new>
    - Qiita Team: `https://<your-team>.qiita.com/settings/developer_settings`
 
-4. 発行したトークンを次のいずれかで渡す。
-   - `qiita-kamo login` を実行し、対話入力で保存する（`~/.config/qiita-kamo/credentials.json`）
-   - 環境変数 `QIITA_TOKEN=<token>` を渡す
+3. `qiita-kamo login` を実行する。接続先ドメイン（Qiita Team は `<your-team>.qiita.com`、公開版は `qiita.com`）とトークンを入力すると `~/.config/qiita-kamo/credentials.json` に保存され、**以降はどのディレクトリでも使える**。
+
+一時的に上書きしたい場合は環境変数 `QIITA_TOKEN` / `QIITA_DOMAIN`（またはカレントの `.env` の `QIITA_DOMAIN`）も使えます。
 
 ## 使い方
 

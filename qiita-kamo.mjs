@@ -12,6 +12,20 @@ import { createInterface } from "node:readline/promises";
 import os from "node:os";
 import path from "node:path";
 
+const credentialPath = () => {
+  const base = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
+  return path.join(base, "qiita-kamo", "credentials.json");
+};
+
+const readConfig = async () => {
+  try {
+    return JSON.parse(await readFile(credentialPath(), "utf8"));
+  } catch {
+    return {};
+  }
+};
+
+// 接続先の決定: QIITA_DOMAIN env → カレントの .env → login で保存した設定 → 既定 qiita.com。
 const readEnvDomain = async () => {
   if (process.env.QIITA_DOMAIN) return process.env.QIITA_DOMAIN;
   try {
@@ -19,20 +33,15 @@ const readEnvDomain = async () => {
     const m = txt.match(/^\s*QIITA_DOMAIN\s*=\s*(.+?)\s*$/m);
     if (m) return m[1];
   } catch {}
+  const { domain } = await readConfig();
+  if (domain) return domain;
   return "qiita.com";
-};
-
-const credentialPath = () => {
-  const base = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
-  return path.join(base, "qiita-kamo", "credentials.json");
 };
 
 const readToken = async () => {
   if (process.env.QIITA_TOKEN) return process.env.QIITA_TOKEN;
-  try {
-    const data = JSON.parse(await readFile(credentialPath(), "utf8"));
-    if (data.token) return data.token;
-  } catch {}
+  const { token } = await readConfig();
+  if (token) return token;
   throw new Error(
     "トークンがありません。`qiita-kamo login` でログインするか、環境変数 QIITA_TOKEN を設定してください。",
   );
@@ -249,16 +258,18 @@ const cmdUpdate = async (domain, token, id, file) => {
 };
 
 // トークンを対話入力で受け取り、検証してから自前の保存先に書く。公式CLIには依存しない。
-const cmdLogin = async (domain) => {
+const cmdLogin = async (defaultDomain) => {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const domain =
+    (await rl.question(`接続先ドメイン [${defaultDomain}]: `)).trim() || defaultDomain;
   const token = (await rl.question(`${domain} のアクセストークンを入力: `)).trim();
   rl.close();
   if (!token) throw new Error("トークンが空です。");
   const user = await api(`/api/v2/authenticated_user`, domain, token);
   const file = credentialPath();
   await mkdir(path.dirname(file), { recursive: true });
-  await writeFile(file, JSON.stringify({ token }, null, 2) + "\n", { mode: 0o600 });
-  console.log(`ログインしました: @${user.id}`);
+  await writeFile(file, JSON.stringify({ token, domain }, null, 2) + "\n", { mode: 0o600 });
+  console.log(`ログインしました: @${user.id} (${domain})`);
   console.log(`保存先: ${file}`);
 };
 
