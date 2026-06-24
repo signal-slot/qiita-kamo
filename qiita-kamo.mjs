@@ -51,7 +51,11 @@ const api = async (apiPath, domain, token, { method = "GET", payload } = {}) => 
   const url = `https://${domain}${apiPath}`;
   const res = await fetch(url, {
     method,
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "User-Agent": "qiita-kamo",
+    },
     body: payload ? JSON.stringify(payload) : undefined,
   });
   if (!res.ok) {
@@ -76,9 +80,10 @@ const parseArticle = (text) => {
     const kv = line.match(/^(\w+)\s*:\s*(.*)$/);
     if (kv) meta[kv[1]] = kv[2].trim();
   }
-  const rawTags = meta.tags || "";
+  // tags は「tag1, tag2」「tag1 tag2」も YAML/JSON 配列 ["tag1","tag2"] も受ける。
+  const rawTags = (meta.tags || "").replace(/^\[|\]$/g, "");
   const tags = (rawTags.includes(",") ? rawTags.split(",") : rawTags.split(/\s+/))
-    .map((t) => t.trim())
+    .map((t) => t.trim().replace(/^['"]|['"]$/g, "").trim())
     .filter(Boolean)
     .map((name) => ({ name, versions: [] }));
   return {
@@ -234,8 +239,16 @@ const cmdPost = async (domain, token, file) => {
   const text = await readFile(file, "utf8");
   const a = parseArticle(text);
   if (!a.title) throw new Error("frontmatter に title: が必要です。");
-  const payload = { title: a.title, body: a.body, tags: a.tags };
-  if (a.private !== undefined) payload.private = a.private;
+  // 公式 qiita-cli と同じボディ形状に合わせる（Team で 403 forbidden を避けるため
+  // private/organization_url_name/slide も明示送信する）。
+  const payload = {
+    body: a.body,
+    title: a.title,
+    tags: a.tags,
+    private: a.private ?? false,
+    organization_url_name: null,
+    slide: false,
+  };
   const it = await api(`/api/v2/items`, domain, token, { method: "POST", payload });
   console.log(`投稿しました ✨`);
   console.log(`  タイトル: ${it.title}`);
