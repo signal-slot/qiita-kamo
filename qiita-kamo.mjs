@@ -287,18 +287,32 @@ const cmdLogin = async (defaultDomain) => {
 };
 
 const printHelp = (domain) => {
-  console.log(`Qiita Team 記事 読み書き CLI (接続先: ${domain})
+  console.log(`Qiita / Qiita Team 記事 読み書き CLI (接続先: ${domain})
 
 ログイン:
-  qiita-kamo login                       アクセストークンを保存
+  qiita-kamo login                       接続先ドメインとアクセストークンを保存
+
 読む:
-  qiita-kamo list [--page N] [--per N]   記事一覧
-  qiita-kamo read <ID|番号>              記事を表示（長い記事は | less 推奨）
-  qiita-kamo search <キーワード>          タイトル検索
-  qiita-kamo grep <キーワード>            本文を全文検索（抜粋表示）
+  qiita-kamo list [--page N] [--per N]   記事一覧（番号・タイトル・ID・更新日）
+  qiita-kamo read <ID|番号>              記事を全文表示（長い記事は | less 推奨）
+  qiita-kamo search <キーワード>          タイトルを検索
+  qiita-kamo grep <キーワード>            本文を全文検索（著者・抜粋・ID 表示）
+  qiita-kamo tag <タグ名>                 タグで絞り込み
+  qiita-kamo group <グループ名>           グループ（Qiita Team のカテゴリ相当）で絞り込み
+
 書く:
-  qiita-kamo post <file.md>             新規投稿（frontmatter に title/tags/private）
-  qiita-kamo update <ID> <file.md>      既存記事を更新
+  qiita-kamo post <file.md>              新規投稿
+  qiita-kamo update <ID> <file.md>       既存記事を更新
+
+投稿ファイル (.md) の frontmatter:
+  ---
+  title: タイトル
+  tags: Qt, C++            # 「a, b」「a b」「["a","b"]」のいずれも可
+  private: false
+  ---
+  本文（Markdown）
+
+接続先・トークンは login で保存。環境変数 QIITA_DOMAIN / QIITA_TOKEN で上書き可。
 `);
 };
 
